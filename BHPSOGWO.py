@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(42)
 
-class HPSOGWO():
+class BHPSOGWO():
     def __init__(self, fit_func, num_dim=30, num_particle=20, max_iter=500):
         self.fit_func = fit_func
         self.num_dim = num_dim
@@ -43,7 +43,6 @@ class HPSOGWO():
         
     def opt(self):
         while(self._iter<self.max_iter):
-            print(111)
             for i in range(self.num_particle):
                 score = self.fit_func(self.X[i, :])
                 
@@ -68,7 +67,7 @@ class HPSOGWO():
                     A1 = 2*a*r1 - a # (3)
                     C1 = 0.5
                     D_alpha = np.abs(C1*self.X_alpha[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(A1*D_alpha) # (18)
+                    v1 = self.sigmoid(-1*A1*D_alpha) # (18)
                     if v1<np.random.uniform():
                         v1 = 0.0
                     else:
@@ -80,7 +79,7 @@ class HPSOGWO():
                     A2 = 2*a*r1 - a # (3)
                     C2 = 0.5
                     D_beta = np.abs(C2*self.X_beta[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(A2*D_beta) # (18)
+                    v1 = self.sigmoid(-1*A2*D_beta) # (18)
                     if v1<np.random.uniform():
                         v1 = 0.0
                     else:
@@ -93,7 +92,7 @@ class HPSOGWO():
                     A3 = 2*a*r1 - a # (3)
                     C3 = 0.5
                     D_delta = np.abs(C3*self.X_delta[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(A3*D_delta) # (18)
+                    v1 = self.sigmoid(-1*A3*D_delta) # (18)
                     if v1<np.random.uniform():
                         v1 = 0.0
                     else:

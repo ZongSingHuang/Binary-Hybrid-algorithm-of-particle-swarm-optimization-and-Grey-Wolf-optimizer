@@ -5,7 +5,7 @@ Created on Mon Nov 23 21:29:10 2020
 @author: ZongSing_NB
 """
 
-from HPSOGWO import HPSOGWO
+from BHPSOGWO import BHPSOGWO
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,23 +26,23 @@ def Breastcancer_test(x):
     
     for i in range(x.shape[0]):
         if np.sum(x[i, :])>0:
-            knn = KNeighborsClassifier(n_neighbors=5).fit(X_train[:, x[i, :].astype(bool)], y_train)
+            knn = KNeighborsClassifier(n_neighbors=1).fit(X_train[:, x[i, :].astype(bool)], y_train)
             score = accuracy_score(knn.predict(X_test[:, x[i, :].astype(bool)]), y_test)
             loss[i] = 0.99*(1-score) + 0.01*(np.sum(x[i, :])/X_train.shape[1])
         else:
             loss[i] = np.inf
     return loss
 
-optimizer = HPSOGWO(fit_func=Breastcancer_test, 
+optimizer = BHPSOGWO(fit_func=Breastcancer_test, 
                     num_dim=X_train.shape[1], num_particle=10, max_iter=100)
 optimizer.opt()
 
-knn = KNeighborsClassifier(n_neighbors=5)
+knn = KNeighborsClassifier(n_neighbors=1)
 knn.fit(X_train[:, optimizer.X_alpha.astype(bool)], y_train)
 print(np.sum(optimizer.X_alpha))
 print(accuracy_score(knn.predict(X_test[:, optimizer.X_alpha.astype(bool)]), y_test))
 
-knn = KNeighborsClassifier(n_neighbors=5)
+knn = KNeighborsClassifier(n_neighbors=1)
 knn.fit(X_train, y_train)
 print(X_train.shape[1])
 print(accuracy_score(knn.predict(X_test), y_test))
