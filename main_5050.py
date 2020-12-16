@@ -17,7 +17,7 @@ np.random.seed(42)
 # 讀資料
 Breastcancer = pd.read_csv('M-of-n.csv', header=None).values
 
-X_train, X_test, y_train, y_test = train_test_split(Breastcancer[:, :-1], Breastcancer[:, -1], stratify=Breastcancer[:, -1], test_size=0.5)
+X_train, X_test, y_train, y_test = train_test_split(Breastcancer[:, :-1], Breastcancer[:, -1], test_size=0.5)
 
 def Breastcancer_test(x):
     if x.ndim==1:
@@ -28,21 +28,19 @@ def Breastcancer_test(x):
         if np.sum(x[i, :])>0:
             knn = KNeighborsClassifier(n_neighbors=5).fit(X_train[:, x[i, :].astype(bool)], y_train)
             score = accuracy_score(knn.predict(X_test[:, x[i, :].astype(bool)]), y_test)
-            loss[i] = 0.01*(1-score) + 0.99*(np.sum(x[i, :])/X_train.shape[1])
+            loss[i] = 0.99*(1-score) + 0.01*(np.sum(x[i, :])/X_train.shape[1])
         else:
             loss[i] = np.inf
-            print(666)
-    print(loss.max())
     return loss
 
 optimizer = HPSOGWO(fit_func=Breastcancer_test, 
-                    num_dim=X_train.shape[1], num_particle=10, max_iter=100, x_max=1, x_min=0)
+                    num_dim=X_train.shape[1], num_particle=10, max_iter=100)
 optimizer.opt()
 
 knn = KNeighborsClassifier(n_neighbors=5)
-knn.fit(X_train[:, optimizer.gBest_X.astype(bool)], y_train)
-print(np.sum(optimizer.gBest_X))
-print(accuracy_score(knn.predict(X_test[:, optimizer.gBest_X.astype(bool)]), y_test))
+knn.fit(X_train[:, optimizer.X_alpha.astype(bool)], y_train)
+print(np.sum(optimizer.X_alpha))
+print(accuracy_score(knn.predict(X_test[:, optimizer.X_alpha.astype(bool)]), y_test))
 
 knn = KNeighborsClassifier(n_neighbors=5)
 knn.fit(X_train, y_train)
