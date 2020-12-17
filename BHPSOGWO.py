@@ -5,8 +5,8 @@ Created on Mon Nov 23 21:29:10 2020
 @author: ZongSing_NB
 
 Main reference:
-https://doi.org/10.1016/j.advengsoft.2013.12.007
-https://seyedalimirjalili.com/gwo
+https://doi.org/10.1109/ACCESS.2019.2906757
+https://www.mathworks.com/matlabcentral/fileexchange/78601-binary-optimization-using-hybrid-gwo-for-feature-selection
 """
 
 import numpy as np
@@ -27,7 +27,11 @@ class BHPSOGWO():
         self.X_alpha = np.zeros(self.num_dim)
         self.X_beta = np.zeros(self.num_dim)
         self.X_delta = np.zeros(self.num_dim)
-
+        
+        self.C1 = 0.5
+        self.C2 = 0.5
+        self.C3 = 0.5
+        
         self.X = (np.random.uniform(size=[self.num_particle, self.num_dim]) > 0.5)*1.0
         
         self.gBest_curve = np.zeros(self.max_iter)
@@ -47,74 +51,67 @@ class BHPSOGWO():
                 score = self.fit_func(self.X[i, :])
                 
                 if score<self.score_alpha:
+                    # ---EvoloPy ver.---
+                    self.score_delta = self.score_beta
+                    self.X_delta = self.X_beta.copy()
+                    self.score_beta = self.score_alpha
+                    self.X_beta = self.X_alpha.copy()
+                    # ------------------
                     self.score_alpha = score.copy()
-                    self.X_alpha = self.X[i, :]
+                    self.X_alpha = self.X[i, :].copy()
             
                 if score>self.score_alpha and score<self.score_beta:
+                    # ---EvoloPy ver.---
+                    self.score_delta = self.score_beta
+                    self.X_delta = self.X_beta.copy()
+                    # ------------------
                     self.score_beta = score.copy()
-                    self.X_beta = self.X[i, :]
+                    self.X_beta = self.X[i, :].copy()
             
                 if score>self.score_alpha and score>self.score_beta and score<self.score_delta:
                     self.score_delta = score.copy()
-                    self.X_delta = self.X[i, :]
+                    self.X_delta = self.X[i, :].copy()
             
             a = 2 - 2*self._iter/self.max_iter # (8)
             
             for i in range(self.num_particle):
-                for j in range(self.num_dim):
-                    r1 = np.random.uniform()
-                    r2 = np.random.uniform()
-                    A1 = 2*a*r1 - a # (3)
-                    C1 = 0.5
-                    D_alpha = np.abs(C1*self.X_alpha[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(-1*A1*D_alpha) # (18)
-                    if v1<np.random.uniform():
-                        v1 = 0.0
-                    else:
-                        v1 = 1.0
-                    X1 = ((self.X_alpha[j]+v1)>=1)*1.0
-                    
-                    r1 = np.random.uniform()
-                    r2 = np.random.uniform()
-                    A2 = 2*a*r1 - a # (3)
-                    C2 = 0.5
-                    D_beta = np.abs(C2*self.X_beta[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(-1*A2*D_beta) # (18)
-                    if v1<np.random.uniform():
-                        v1 = 0.0
-                    else:
-                        v1 = 1.0
-                    X2 = ((self.X_beta[j]+v1)>=1)*1.0
-                    
-                    r1 = np.random.uniform()
-                    r2 = np.random.uniform()
-                    r3 = np.random.uniform()
-                    A3 = 2*a*r1 - a # (3)
-                    C3 = 0.5
-                    D_delta = np.abs(C3*self.X_delta[j] - self.w*self.X[i, j]) #(19)
-                    v1 = self.sigmoid(-1*A3*D_delta) # (18)
-                    if v1<np.random.uniform():
-                        v1 = 0.0
-                    else:
-                        v1 = 1.0
-                    X3 = ((self.X_delta[j]+v1)>=1)*1.0
-
-                    self.V[i, j] = self.w*(self.V[i, j] \
-                                           + C1*r1*(X1-self.X[i, j])
-                                           + C2*r2*(X2-self.X[i, j])
-                                           + C3*r3*(X3-self.X[i, j])) # (20)
-
-                    xx = self.sigmoid((X1+X2+X3)/3) + self.V[i, j] # (21)
-                    if xx<np.random.uniform():
-                        xx = 0.0
-                    else:
-                        xx = 1.0
-                    self.X[i, j] = xx
+                r1 = np.random.uniform(size=[self.num_dim])
+                A1 = 2*a*r1 - a # (3)
+                D_alpha = np.abs(self.C1*self.X_alpha - self.w*self.X[i, :]) #(19)
+                cstep_alpha = self.sigmoid(-1*A1*D_alpha) # (18)
+                bstep_alpha = ( cstep_alpha>=np.random.uniform(size=[self.num_dim]) )*1.0 # (17)
+                X1 = ((self.X_alpha+bstep_alpha)>=1)*1.0 # (16)
                 
+                r1 = np.random.uniform(size=[self.num_dim])
+                A2 = 2*a*r1 - a # (3)
+                D_beta = np.abs(self.C2*self.X_beta - self.w*self.X[i, :]) #(19)
+                cstep_beta = self.sigmoid(-1*A2*D_beta) # (18)
+                bstep_beta = ( cstep_beta>=np.random.uniform(size=[self.num_dim]) )*1.0 # (17)
+                X2 = ((self.X_beta+bstep_beta)>=1)*1.0 # (16)
+                
+                r1 = np.random.uniform(size=[self.num_dim])
+                A3 = 2*a*r1 - a # (3)
+                D_delta = np.abs(self.C3*self.X_delta - self.w*self.X[i, :]) #(19)
+                cstep_delta = self.sigmoid(-1*A3*D_delta) # (18)
+                bstep_delta = ( cstep_delta>=np.random.uniform(size=[self.num_dim]) )*1.0 # (17)
+                X3 = ((self.X_delta+bstep_delta)>=1)*1.0 # (16)
+                
+                # with r
+                r1 = np.random.uniform(size=[self.num_dim])
+                r2 = np.random.uniform(size=[self.num_dim])
+                r3 = np.random.uniform(size=[self.num_dim])
+                self.V[i, :] = self.w*(self.V[i, :] \
+                                       + self.C1*r1*(X1-self.X[i, :])
+                                       + self.C2*r2*(X2-self.X[i, :])
+                                       + self.C3*r3*(X3-self.X[i, :])) # (20)
+                
+                self.X[i, :] = self.sigmoid((X1+X2+X3)/3) + self.V[i, :] # (21) + (14)
+                
+                self.X[i, :] = ( self.X[i, :]>=np.random.uniform(size=[self.num_dim]) ) *1.0 # (14)
             
-                print(self.score_alpha)
-                print(self.X_alpha)
-                print('---')
+            print('iter:', self._iter, ', score:', self.score_alpha)
+            print(self.X_alpha)
+            print('---')
             
             self._iter = self._iter + 1
             self.gBest_curve[self._iter-1] = self.score_alpha.copy()

@@ -31,7 +31,6 @@ def Breastcancer_test(x):
             loss[i] = 0.99*(1-score.mean()) + 0.01*(np.sum(x[i, :])/X.shape[1])
         else:
             loss[i] = np.inf
-            print(666)
     return loss
 
 skf = StratifiedKFold(n_splits=10, shuffle=True)
